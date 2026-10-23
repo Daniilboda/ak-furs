@@ -5,8 +5,7 @@
 из уже существующего answers.json (если файл есть).
 
 Пример (из корня проекта):
-  python solve.py
-  python solve.py docs/
+  python solve.py data
 """
 
 from __future__ import annotations
@@ -19,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parent
-RUN_COMMAND = "python solve.py"
+RUN_COMMAND = "python solve.py data"
 
 
 def _add_packages() -> None:
@@ -136,8 +135,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "data_dir",
         nargs="?",
-        default=str(ROOT / "docs"),
-        help="Папка с сырыми файлами (по умолчанию docs/)",
+        default=str(ROOT / "data"),
+        help="Папка с сырыми файлами (по умолчанию data/)",
     )
     parser.add_argument(
         "--out",

@@ -28,6 +28,8 @@ Thumbs.db
 .env.*
 
 # Сырые выгрузки и производные данные — только локально
+data/*
+!data/.gitkeep
 docs/
 answers.json
 crm_cleanup/normalized_crm/*

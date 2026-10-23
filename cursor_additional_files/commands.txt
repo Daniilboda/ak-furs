@@ -130,12 +130,12 @@ python -m pytest client_chats/tests -q
 ========== solve.py (сдача, весь answers.json) ==========
 
 Из корня проекта:
-python solve.py
+python solve.py data
 
 Или с папкой сырых файлов и явным выходом:
-python solve.py docs/ --out answers.json
+python solve.py data --out answers.json
 
-В answers.json поле run_command = "python solve.py"
+В answers.json поле run_command = "python solve.py data"
 
 Тесты сдачи:
 python -m pytest tests -q
@@ -161,5 +161,5 @@ python UI/verify_testdata.py
 2) Потом bank_reconcile → читает этот cleaned и выписку
 3) Потом price_policy → читает cleaned и каталог цен
 4) Потом client_chats: annotate_chats → chat_annotations.json; из него — список Q4
-5) Для сдачи: python solve.py → answers.json из сырых docs/
+5) Для сдачи: python solve.py data → answers.json из сырых data/
 

@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = Path(__file__).resolve().parent / "testdata"
-DOCS = ROOT / "docs"
+DOCS = ROOT / "data"
 
 CRM_FIELDS = [
     "Номер заказа",

@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-TEMPLATE = ROOT / "docs" / "answers_template.json"
+TEMPLATE = ROOT / "data" / "answers_template.json"
 ANSWERS = ROOT / "answers.json"
 
 REQUIRED_KEYS = [

@@ -10,16 +10,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOLVE = ROOT / "solve.py"
-DOCS = ROOT / "docs"
+DATA = ROOT / "data"
 ANSWERS = ROOT / "answers.json"
-TEMPLATE = ROOT / "docs" / "answers_template.json"
+TEMPLATE = ROOT / "data" / "answers_template.json"
 
 
-def test_build_answers_matches_current_docs():
+def test_build_answers_matches_current_data():
     sys.path.insert(0, str(ROOT))
     from solve import RUN_COMMAND, build_answers
 
-    payload = build_answers(DOCS)
+    payload = build_answers(DATA)
     assert list(payload.keys()) == list(json.loads(TEMPLATE.read_text(encoding="utf-8")).keys())
     assert payload["q1_unique_orders"] == 1000
     assert payload["q1_unique_order_lines"] == 1368
@@ -39,7 +39,7 @@ def test_cli_preserves_manual_notes(tmp_path: Path):
         json.dumps({"notes": "мои толкования вручную"}, ensure_ascii=False),
         encoding="utf-8",
     )
-    cmd = [sys.executable, str(SOLVE), str(DOCS), "--out", str(out)]
+    cmd = [sys.executable, str(SOLVE), str(DATA), "--out", str(out)]
     env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
     subprocess.run(cmd, check=True, capture_output=True, text=True, cwd=str(ROOT), env=env)
     payload = json.loads(out.read_text(encoding="utf-8"))
@@ -49,7 +49,7 @@ def test_cli_preserves_manual_notes(tmp_path: Path):
 
 def test_cli_writes_answers_and_is_idempotent(tmp_path: Path):
     out = tmp_path / "answers.json"
-    cmd = [sys.executable, str(SOLVE), str(DOCS), "--out", str(out)]
+    cmd = [sys.executable, str(SOLVE), str(DATA), "--out", str(out)]
     env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
     subprocess.run(cmd, check=True, capture_output=True, text=True, cwd=str(ROOT), env=env)
     first = out.read_text(encoding="utf-8")
