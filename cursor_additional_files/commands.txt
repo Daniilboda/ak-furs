@@ -1,0 +1,165 @@
+Команды запуска этапов 1–4 и сдачи (solve.py).
+Запускать из корня проекта: Ak Furs\
+Имена файлов могут меняться — подставляй свои пути.
+
+
+========== crm_cleanup (этап 1) ==========
+
+Универсальная команда:
+python crm_cleanup/run_crm_cleanup.py --crm "docs/ИМЯ_выгрузки_crm.csv" --catalog "docs/ИМЯ_справочника.xlsx" --out-dir "crm_cleanup/normalized_crm" --only all
+
+Параметры:
+  --crm       сырая выгрузка CRM (обязательно)
+  --catalog   справочник с листом «Менеджеры» (по умолчанию docs/03_catalog_prices_reference.xlsx)
+  --out-dir   папка для результата (по умолчанию crm_cleanup/normalized_crm)
+  --only      all | dedupe | normalize (по умолчанию all)
+
+Результат: crm_cleanup/normalized_crm/<имя_исходного_файла>_cleaned.csv
+
+Пример (текущие файлы):
+python crm_cleanup/run_crm_cleanup.py --crm "docs/01_crm_orders_export.csv" --catalog "docs/03_catalog_prices_reference.xlsx" --out-dir "crm_cleanup/normalized_crm" --only all
+
+Короткий вариант с дефолтами catalog/out-dir/only:
+python crm_cleanup/run_crm_cleanup.py --crm "docs/01_crm_orders_export.csv"
+
+Тесты этапа 1:
+python -m pytest crm_cleanup/tests -q
+
+
+========== bank_reconcile (этап 2) ==========
+
+Универсальная команда:
+python bank_reconcile/run_bank_reconcile.py --crm "crm_cleanup/normalized_crm/ИМЯ_cleaned.csv" --bank "docs/ИМЯ_выписки.csv" --out "bank_reconcile/results/q2_reconciliation.csv" --unidentified-out "bank_reconcile/results/unidentified_incoming.csv"
+
+Параметры:
+  --crm               уже очищенный CRM (*_cleaned.csv), имя файла может быть любым
+  --bank              рублёвая выписка (имя файла может быть любым)
+  --out               итоги Q2 (по умолчанию bank_reconcile/results/q2_reconciliation.csv)
+  --unidentified-out  список неопознанных (по умолчанию bank_reconcile/results/unidentified_incoming.csv)
+
+В консоль печатается JSON.
+В --out пишется CSV: итоги Q2a/Q2b и ниже таблица неопознанных поступлений.
+Отдельно обновляется unidentified_incoming.csv в results/.
+
+Пример (текущие файлы):
+python bank_reconcile/run_bank_reconcile.py --crm "crm_cleanup/normalized_crm/01_crm_orders_export_cleaned.csv" --bank "docs/02_bank_statement_rub.csv" --out "bank_reconcile/results/q2_reconciliation.csv"
+
+Короткий вариант с дефолтными путями:
+python bank_reconcile/run_bank_reconcile.py
+
+Тесты этапа 2:
+python -m pytest bank_reconcile/tests -q
+
+
+========== price_policy (этап 3) ==========
+
+Универсальная команда:
+python price_policy/run_price_policy.py --crm "crm_cleanup/normalized_crm/ИМЯ_cleaned.csv" --catalog "docs/ИМЯ_справочника.xlsx" --out "price_policy/results/q3_price_violations.csv"
+
+Параметры:
+  --crm       очищенный CRM (*_cleaned.csv)
+  --catalog   xlsx со скрытым «Прайс_история» и «Переименования»
+  --out       итоги Q3 (по умолчанию price_policy/results/q3_price_violations.csv)
+
+Пример (текущие файлы):
+python price_policy/run_price_policy.py --crm "crm_cleanup/normalized_crm/01_crm_orders_export_cleaned.csv" --catalog "docs/03_catalog_prices_reference.xlsx" --out "price_policy/results/q3_price_violations.csv"
+
+Короткий вариант:
+python price_policy/run_price_policy.py
+
+Тесты этапа 3:
+python -m pytest price_policy/tests -q
+
+
+========== client_chats (этап 4) ==========
+
+========== normilized_chats (шапки чатов) ==========
+
+Нормализация шапок (клиент/заказ/менеджер → канон, как CRM):
+python normilized_chats/run_chat_normalize.py --zip "docs/04_client_chats.zip" --catalog "docs/03_catalog_prices_reference.xlsx" --out-dir "normilized_chats"
+
+Короткий вариант:
+python normilized_chats/run_chat_normalize.py
+
+Несколько txt из папки (без zip):
+python normilized_chats/run_chat_normalize.py --chats-dir "путь/к/папке" --out-dir "normilized_chats"
+
+Результат: normilized_chats/chats/Cxxxx.txt
+(исходный docs/04_client_chats.zip не меняется)
+
+Тесты:
+python -m pytest normilized_chats/tests -q
+
+
+========== proposed_reply (предполагаемый ответ клиентке, Q5b) ==========
+
+Цена из cleaned CRM по заказу из нормализованного чата → предполагаемый ответ:
+python proposed_reply/run_proposed_reply.py --chat-id C0010 --chats-dir "normilized_chats/chats" --crm "crm_cleanup/normalized_crm/01_crm_orders_export_cleaned.csv" --out-dir "proposed_reply"
+
+Короткий вариант:
+python proposed_reply/run_proposed_reply.py
+
+Результат: proposed_reply/proposed_reply_C0010.txt
+(цена за ед. без скидки; стиль как ответы на «А цену можно сначала?»)
+
+Тесты:
+python -m pytest proposed_reply/tests -q
+
+Разметка цен и приглашений (агент Cursor → JSON):
+python client_chats/annotate_chats.py --zip "docs/04_client_chats.zip" --out "client_chats/results/chat_annotations.json"
+
+Короткий вариант:
+python client_chats/annotate_chats.py
+
+Результат: client_chats/results/chat_annotations.json
+(150 чатов; поля first_price_*/first_invite_*/meeting_before_price)
+
+Список Q4 из готовой разметки:
+python client_chats/q4_select.py --annotations "client_chats/results/chat_annotations.json" --out "client_chats/results/q4_chats_meeting_before_price.json"
+
+Короткий вариант:
+python client_chats/q4_select.py
+
+Пересчёт разметки из zip и сразу Q4:
+python client_chats/q4_select.py --zip "docs/04_client_chats.zip"
+
+Тесты этапа 4 (готовые шаги):
+python -m pytest client_chats/tests -q
+
+
+========== solve.py (сдача, весь answers.json) ==========
+
+Из корня проекта:
+python solve.py
+
+Или с папкой сырых файлов и явным выходом:
+python solve.py docs/ --out answers.json
+
+В answers.json поле run_command = "python solve.py"
+
+Тесты сдачи:
+python -m pytest tests -q
+
+
+========== UI (загрузка файлов + solve.py) ==========
+
+Из корня проекта (нужен flask: pip install -r UI/requirements.txt):
+python UI/app.py
+
+Открыть в браузере: http://127.0.0.1:5050
+Загрузить 4 файла → «Запустить python solve.py» → скачать cleaned CRM, answers.json, q2_reconciliation.csv и доп. JSON чатов.
+
+Мини-набор для проверки UI (сервер должен быть запущен):
+python UI/build_testdata.py
+python UI/verify_testdata.py
+# либо загрузить файлы из UI/testdata/ вручную в браузере
+
+
+========== Порядок ==========
+
+1) Сначала crm_cleanup → получается *_cleaned.csv
+2) Потом bank_reconcile → читает этот cleaned и выписку
+3) Потом price_policy → читает cleaned и каталог цен
+4) Потом client_chats: annotate_chats → chat_annotations.json; из него — список Q4
+5) Для сдачи: python solve.py → answers.json из сырых docs/
+

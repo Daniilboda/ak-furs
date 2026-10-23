@@ -1,0 +1,11 @@
+Нормализация шапок чатов — папка normilized_chats/
+
+Скрипт: normilized_chats/run_chat_normalize.py
+Логика: normilized_chats/chat_normalize.py (order_number / client_number / normalize_manager из crm_cleanup)
+Результат: normilized_chats/chats/Cxxxx.txt
+Исходный docs/04_client_chats.zip не изменяется.
+
+Примеры:
+python normilized_chats/run_chat_normalize.py
+python normilized_chats/run_chat_normalize.py --zip "docs/04_client_chats.zip" --out-dir "normilized_chats"
+python normilized_chats/run_chat_normalize.py --chats-dir "путь/к/папке_с_txt" --out-dir "normilized_chats"

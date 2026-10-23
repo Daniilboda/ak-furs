@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+*.egg-info/
+
+# Excel lock / temp
+~$*
+*.tmp
+
+# UI runtime
+UI/work/
+UI/testdata/out_from_api/
+UI/testdata/_pipe_out/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Local secrets (if any appear later)
+.env
+.env.*

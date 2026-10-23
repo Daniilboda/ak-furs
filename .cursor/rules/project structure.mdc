@@ -1,0 +1,230 @@
+---
+description: Структура папок и файлов AK Furs. Подключай это правило при создании, переносе или переименовании любой папки или файла.
+alwaysApply: false
+---
+
+# Структура проекта
+
+Корень: `c:\Users\Daniil\Documents\CursorProjects\Ak Furs`. Новые папки в корне не создавать, пока пользователь не назвал имя и назначение.
+
+```
+Ak Furs/
+  .cursor/rules/              правила агента, только .mdc
+  answers.json                итог сдачи Q1–Q4 (+ run_command, notes); не путать с шаблоном
+  tests/                      pytest этапа сдачи (шаблон answers.json и т.п.)
+  docs/                       исходные выгрузки задания, не изменять
+  crm_cleanup/                первый этап: привести CRM к аккуратному виду
+    normalized_crm/           результат обработки, исходный docs/ не трогать
+    tests/                    pytest для первого этапа
+  bank_reconcile/             второй этап: сверка заказов с банковской выпиской
+    results/                  итоги Q2 и список неопознанных поступлений
+    tests/                    pytest для второго этапа
+  price_policy/               третий этап: ценовая политика (Q3)
+    results/                  итоги Q3
+    tests/                    pytest для третьего этапа
+  client_chats/               четвёртый этап: разбор переписок (Q4)
+    tests/                    pytest для четвёртого этапа
+  normilized_chats/           нормализация шапок чатов (отдельный мини-этап)
+    chats/                    результат: Cxxxx.txt с каноническими шапками
+    tests/
+  proposed_reply/             предполагаемый ответ клиентке (Q5b): цена + текст
+    tests/
+  cursor_additional_files/    рабочие файлы процесса разработки программы
+  reports/                    тексты этапа 5: записка руководителю (Q5a)
+  UI/                         веб-интерфейс загрузки сырых файлов и запуска solve.py
+```
+
+## `.cursor/rules/`
+
+| Файл | Когда действует |
+| --- | --- |
+| `ТЗ — тестовое задание AI-ассистент AK Furs.mdc` | всегда |
+| `dialoge rules.mdc` | всегда |
+| `project structure.mdc` | при создании, переносе или переименовании папок и файлов |
+
+Новое правило — отдельный `.mdc` в этой папке. В frontmatter: `alwaysApply: true` только если правило нужно в каждом чате; иначе `alwaysApply: false` и в `description` явно написано, когда его подключать.
+
+## Корень
+
+| Файл | Назначение |
+| --- | --- |
+| `answers.json` | Ответы для сдачи по полям `docs/answers_template.json` (шаблон не заполнять) |
+| `solve.py` | Одна команда пересчёта `answers.json` из сырых файлов `docs/` |
+| `tests/test_answers_step_1.py` | pytest: ключи и типы `answers.json` совпадают с шаблоном |
+| `tests/test_solve_step_2.py` | pytest: `python solve.py` даёт те же Q1–Q4; повторный запуск идемпотентен |
+
+## `docs/`
+
+Сырые данные. Содержимое не переписывать и не нормализовать на месте.
+
+| Файл | Назначение |
+| --- | --- |
+| `01_crm_orders_export.csv` | заказы CRM, UTF-8 с BOM, разделитель `;` |
+| `02_bank_statement_rub.csv` | банковская выписка, кодировка Windows-1251 |
+| `03_catalog_prices_reference.xlsx` | каталог, переименования, скрытый лист «Прайс_история», менеджеры |
+| `04_client_chats.zip` | 150 чатов `chats/C0001.txt`–`C0150.txt` |
+| `answers_template.json` | шаблон сдачи, не заполнять его вместо результата |
+| `ТЗ — тестовое задание AI-ассистент AK Furs.docx` | исходное задание |
+
+Вне проекта, только для сверки: `c:\Users\Daniil\Downloads\ТЗ — тестовое задание AI-ассистент AK Furs.md`. В репозиторий его не копировать.
+
+## `crm_cleanup/`
+
+Первый этап: привести CRM к аккуратному виду. Исходный файл из `docs/` не изменять.
+
+| Файл | Назначение |
+| --- | --- |
+| `crm_dedupe.py` | Чтение CRM, удаление дублей, канонические номера заказов и клиентов, подсчёт Q1 |
+| `tests/test_crm_dedupe_client_number.py` | pytest: клиент к числу без ведущих нулей |
+| `crm_normalize.py` | Нормализация статусов, скидок, дат, цен, источников и имён менеджеров |
+| `tests/test_crm_normalize_source.py` | pytest: источники к Instagram / Telegram / Рекомендация / Яндекс Карты / Сайт |
+| `tests/test_crm_normalize_currency.py` | pytest: валюта к «руб.» |
+| `tests/test_crm_normalize_creation_date.py` | pytest: дата создания в формате ДД.ММ.ГГГГ |
+| `tests/test_crm_normalize_unit_price_format.py` | pytest: цена за единицу с копейками (50000.00) |
+| `tests/test_crm_normalize_step_5.py` | pytest: сведение статусов к четырём значениям |
+| `tests/test_crm_normalize_step_6.py` | pytest: разбор скидки и цена за единицу после скидки |
+| `tests/test_crm_normalize_step_7.py` | pytest: канонические имена менеджеров |
+| `tests/test_crm_dedupe_q1.py` | pytest: подсчёт уникальных заказов и строк (Q1) |
+| `run_crm_cleanup.py` | Главный вход: `--crm`, `--catalog`, `--only all|dedupe|normalize`. Результат: `{имя}_cleaned.csv`. Справочник xlsx только читается, листы не удаляются |
+| `tests/test_crm_cleanup_step_9.py` | pytest: прогон на подменённой выгрузке и параметры `--only` |
+| `normalized_crm/` | Обработанный CRM: копия имени исходного файла с приставкой `_cleaned` |
+| `tests/` | pytest первого этапа |
+
+## `bank_reconcile/`
+
+Второй этап: сверка cleaned CRM с банковской выпиской (Q2). Исходный `docs/02_bank_statement_rub.csv` не изменять.
+
+| Файл | Назначение |
+| --- | --- |
+| `bank_statement.py` | Чтение выписки; разбор суммы («1 080 500,00») и типа (Поступление / Списание) |
+| `bank_purpose.py` | Номер из назначения; сопоставление с заказами CRM; неопознанные поступления |
+| `bank_q2.py` | Q2a/Q2b; расчёт из сырого или `*_cleaned.csv`; запись итогов |
+| `run_bank_reconcile.py` | CLI: `--crm` (cleaned), `--bank`, `--out` → JSON + CSV |
+| `results/` | Результаты CLI этапа 2 |
+| `results/q2_reconciliation.csv` | Итоги Q2 + таблица неопознанных поступлений |
+| `results/unidentified_incoming.csv` | Тот же список неопознанных отдельным файлом |
+| `tests/test_bank_statement_step_1.py` | pytest: кодировка, заголовки, дата/сумма/тип/назначение |
+| `tests/test_bank_statement_step_2.py` | pytest: разбор суммы и отделение поступлений от списаний |
+| `tests/test_bank_purpose_step_3.py` | pytest: извлечение номера заказа из назначения |
+| `tests/test_bank_purpose_step_4.py` | pytest: номер есть в CRM → опознан; иначе нет |
+| `tests/test_bank_q2_step_5.py` | pytest: Q2a — оплачен без поступления попадает в список |
+| `tests/test_bank_q2_step_6.py` | pytest: Q2b — количество и сумма неопознанных поступлений |
+| `tests/test_bank_q2_step_7.py` | pytest: Q2 на подменённых CRM и выписке + CLI |
+| `tests/` | pytest второго этапа |
+
+## `price_policy/`
+
+Третий этап: нарушения минимальной цены (Q3). Исходный `docs/03_catalog_prices_reference.xlsx` не изменять.
+
+| Файл | Назначение |
+| --- | --- |
+| `catalog_prices.py` | Чтение скрытого листа «Прайс_история» и листа «Переименования» |
+| `order_date.py` | Дата создания заказа → календарная дата (через парсер этапа 1) |
+| `article_price.py` | Артикул → мин. цена на дату; старый код → новый из «Переименования» |
+| `unit_after_discount.py` | Цена за ед. после скидки (процент / рубли на строку) |
+| `price_violation.py` | Сравнение с минимумом: строго ниже → нарушение |
+| `q3_filter.py` | Q3 без статуса «Отменён»; `line_is_q3_violation` |
+| `q3_summary.py` | Итог Q3: total и разбивка по менеджерам |
+| `run_price_policy.py` | CLI: `--crm` `--catalog` `--out` → JSON + CSV |
+| `results/q3_price_violations.csv` | Итоги Q3 после CLI |
+| `tests/test_q3_filter_step_6.py` | pytest: отменённая ниже минимума не считается |
+| `tests/test_q3_summary_step_7.py` | pytest: total = сумма по менеджерам |
+| `tests/test_q3_step_8.py` | pytest: Q3 на подменённых CRM/каталоге + CLI |
+| `tests/test_article_price_step_3.py` | pytest: старый и новый артикул дают одну мин. цену |
+| `tests/test_unit_after_discount_step_4.py` | pytest: процентная и рублёвая скидка |
+| `tests/test_price_violation_step_5.py` | pytest: ниже минимума — да, равно — нет |
+| `03_catalog_prices_reference_visible.xlsx` | Копия каталога с видимым «Прайс_история» (только просмотр; расчёт читает docs/) |
+| `tests/test_catalog_prices_step_1.py` | pytest: скрытый прайс, колонки периода и мин. цены, переименования |
+| `tests/test_order_date_step_2.py` | pytest: разные записи даты → один календарный день |
+| `tests/` | pytest третьего этапа |
+
+## `client_chats/`
+
+Четвёртый этап: Q4 по перепискам. Исходный `docs/04_client_chats.zip` не изменять.
+
+| Файл | Назначение |
+| --- | --- |
+| `chat_archive.py` | Чтение txt-чатов из zip (UTF-8, ID C0001…) |
+| `chat_turns.py` | Разбор реплик Клиент / Менеджер; тексты менеджера отдельно |
+| `manager_price.py` | Первая цена менеджера: цифры / тыс / млн / пропись (без LLM) |
+| `annotate_chats.py` | Разметка цен и приглашений агентом Cursor → JSON для стабильного Q4 |
+| `q4_select.py` | Отбор Q4: чаты с `meeting_before_price`; CLI → results JSON |
+| `results/chat_annotations.json` | Разметка 150 чатов: индексы первой цены и первого приглашения менеджера |
+| `results/q4_chats_meeting_before_price.json` | Список ID чатов для answers.json (Q4) |
+| `results/_manager_turns_dump.json` | Дамп реплик менеджера для сверки разметки |
+| `tests/test_chat_archive_step_1.py` | pytest: 150 файлов, кодировка, подменённый zip |
+| `tests/test_chat_turns_step_2.py` | pytest: сумма клиента не в репликах менеджера |
+| `tests/test_manager_price_step_3.py` | pytest: цена находится; платежи/часы — нет |
+| `tests/test_q4_select_step_5.py` | pytest: приглашение раньше / цена раньше / нет цены / нет приглашения |
+| `tests/test_q4_step_6.py` | pytest: Q4 на подменённом zip + CLI; список ID без зашитых ответов docs/ |
+| `results/` | Разметка, итог Q4 и промежуточные дампы этапа 4 |
+| `tests/` | pytest четвёртого этапа |
+
+## `normilized_chats/`
+
+Нормализация шапок чатов (клиент / заказ / менеджер) теми же правилами, что crm_cleanup. Исходный `docs/04_client_chats.zip` не изменять. Чтение архива — через `client_chats/chat_archive.py`.
+
+| Файл | Назначение |
+| --- | --- |
+| `chat_normalize.py` | Разбор шапки; клиент/заказ → число; менеджер → канон из справочника |
+| `run_chat_normalize.py` | CLI: `--zip` или `--chats-dir` → `chats/Cxxxx.txt` |
+| `chats/` | Результат: копии чатов с каноническими шапками |
+| `tests/test_chat_normalize.py` | pytest: C0010 → 608 / 702 / Марина Котова; несколько txt из папки |
+| `tests/` | pytest этого мини-этапа |
+
+## `cursor_additional_files/`
+
+Рабочие файлы процесса разработки программы. Исходные выгрузки из `docs/` сюда не копировать. Код этапов сюда не класть.
+
+| Файл | Назначение |
+| --- | --- |
+| `README.txt` | Сообщает, что все файлы папки относятся к процессу разработки программы |
+| `stages.xlsx` | Шесть листов, по одному на этап. На каждом листе шаги: номер, название, описание, как проверить, статус («не начат» или «готов») |
+| `commands.txt` | Универсальные и текущие команды запуска crm_cleanup и bank_reconcile |
+| `todo_chats_normalize.txt` | Напоминание: позже нормализовать клиент и заказ в чатах теми же правилами, что в crm_cleanup |
+
+## `proposed_reply/`
+
+Предполагаемый ответ клиентке (Q5b). Исходные чаты и CRM не изменяет: читает `normilized_chats/chats/` и cleaned CRM.
+
+| Файл | Назначение |
+| --- | --- |
+| `order_price.py` | Номер заказа → «Цена за ед.» из cleaned CRM |
+| `proposed_reply.py` | Шапка нормализованного чата → `order_price` → текст ответа |
+| `run_proposed_reply.py` | CLI: `--chat-id C0010` → `proposed_reply_C0010.txt` |
+| `proposed_reply_C0010.txt` | Готовый текст для C0010 |
+| `tests/test_order_price.py` | pytest: заказ 702 → 252 000 |
+| `tests/test_proposed_reply.py` | pytest: C0010 → текст; пересчёт на подменённом CRM |
+
+## `UI/`
+
+Веб-интерфейс (стиль ak-furs.com): загрузка CRM / выписки / каталога / zip чатов → пайплайн с `python solve.py` и скачивание результатов. Исходный `docs/` не изменяет.
+
+| Файл | Назначение |
+| --- | --- |
+| `app.py` | Flask: страница, `/api/process`, скачивание |
+| `process_pipeline.py` | cleaned CRM, Q2 CSV, annotations, Q4 JSON, вызов `solve.py` → answers.json |
+| `templates/index.html` | UI: drag-and-drop и кнопка запуска |
+| `static/style.css` | Оформление в духе сайта ателье |
+| `static/app.js` | Загрузка файлов и запрос на обработку |
+| `requirements.txt` | flask |
+| `build_testdata.py` | Сборка мини-набора сырых файлов для проверки UI |
+| `verify_testdata.py` | POST тестовых файлов в `/api/process` и проверки ответов |
+| `testdata/` | Тестовые входы (и при проверке — `out_from_api/`) |
+| `work/` | Временные задания UI (можно удалять) |
+
+Запуск из корня: `python UI/app.py` → http://127.0.0.1:5050  
+Тестовые данные: `python UI/build_testdata.py`
+
+## `reports/`
+
+Тексты Q5a. Word править вручную; агент не пересобирает docx из txt без явной просьбы.
+
+| Файл | Назначение |
+| --- | --- |
+| `записка_руководителю.txt` | Записка руководителю (Q5a), текст |
+| `записка_руководителю.docx` | Та же записка в Word |
+
+## Куда класть новое
+
+Если файла нет в этой схеме, не выбирать папку самостоятельно. Напиши в чат предлагаемый путь и зачем он нужен, дождись ответа, затем создавай только согласованное. После появления новой папки или файла допиши её в этот же файл.
