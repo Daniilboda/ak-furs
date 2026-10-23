@@ -12,10 +12,9 @@ venv/
 ~$*
 *.tmp
 
-# UI runtime
+# UI runtime / сгенерированные тест-данные
 UI/work/
-UI/testdata/out_from_api/
-UI/testdata/_pipe_out/
+UI/testdata/
 
 # OS / IDE
 .DS_Store
@@ -28,5 +27,16 @@ Thumbs.db
 .env
 .env.*
 
-# Сырые выгрузки — только локально, в git не кладём
+# Сырые выгрузки и производные данные — только локально
 docs/
+answers.json
+crm_cleanup/normalized_crm/*
+!crm_cleanup/normalized_crm/.gitkeep
+bank_reconcile/results/*
+!bank_reconcile/results/.gitkeep
+client_chats/results/*
+!client_chats/results/.gitkeep
+price_policy/results/*
+!price_policy/results/.gitkeep
+price_policy/03_catalog_prices_reference_visible.xlsx
+normilized_chats/chats/
