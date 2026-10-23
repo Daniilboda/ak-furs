@@ -48,6 +48,7 @@ Ak Furs/
 
 | Файл | Назначение |
 | --- | --- |
+| `README.md` | Описание программы, запуск, модули |
 | `answers.json` | Ответы для сдачи по полям `docs/answers_template.json` (шаблон не заполнять) |
 | `solve.py` | Одна команда пересчёта `answers.json` из сырых файлов `docs/` |
 | `tests/test_answers_step_1.py` | pytest: ключи и типы `answers.json` совпадают с шаблоном |
